@@ -2,61 +2,35 @@ import { parse } from '../../src/parser/index.ts';
 import { interpretAsync } from '../../src/interpreter/index.ts';
 import type { RuntimeValue } from '../../src/types.ts';
 
-const DEFAULT_PROGRAM = `# main
+import fizzbuzz from '../../examples/fizzbuzz.md?raw';
+import helloWorld from '../../examples/hello-world.md?raw';
+import palindrome from '../../examples/palindrome.md?raw';
+import typeError from '../../examples/errors/type-error.md?raw';
+import undeclaredError from '../../examples/errors/undeclared-error.md?raw';
 
-[1, 100](#fizzbuzz)
-
-# fizzbuzz
-
-- start
-- end
-
-[start, end](#loop)
-
-# loop
-
-- i
-- end
-- text = ""
-
-## _i > end_
-
----
-
-## _i % 15 == 0_
-
-**fizzbuzz**
-
-[i + 1, end](#loop)
-
----
-
-## _i % 3 == 0_
-
-text = "fizz"
-
-## _i % 5 == 0_
-
-text += "buzz"
-
-## _text_
-
-**{text}**
-
-[i + 1, end](#loop)
-
----
-
-**{i}**
-
-[i + 1, end](#loop)
-`;
+const EXAMPLES: Record<string, string> = {
+  'fizzbuzz': fizzbuzz,
+  'hello-world': helloWorld,
+  'palindrome': palindrome,
+  'type-error': typeError,
+  'undeclared-error': undeclaredError,
+};
 
 const editor = document.getElementById('editor') as HTMLTextAreaElement;
 const output = document.getElementById('output') as HTMLDivElement;
 const runBtn = document.getElementById('run') as HTMLButtonElement;
+const examplesSelect = document.getElementById('examples') as HTMLSelectElement;
 
-editor.value = DEFAULT_PROGRAM;
+editor.value = EXAMPLES['hello-world'];
+
+examplesSelect.addEventListener('change', () => {
+  const example = EXAMPLES[examplesSelect.value];
+  if (example) {
+    editor.value = example;
+    output.textContent = '';
+    output.classList.remove('error');
+  }
+});
 
 function appendText(text: string) {
   output.appendChild(document.createTextNode(text));

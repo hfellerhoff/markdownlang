@@ -86,13 +86,52 @@ main {
   border-right: 1px solid var(--border);
 }
 
+.pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
 .pane label {
-  padding: 0.4rem 1rem;
+  padding: 0.6rem 0;
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
+}
+
+.pane > label {
+  padding: 0.6rem 1rem;
   border-bottom: 1px solid var(--border);
+}
+
+#examples {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  outline: none;
+  cursor: pointer;
+}
+
+#examples:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+#examples optgroup {
+  font-style: normal;
+  color: var(--muted);
+}
+
+#examples option {
+  background: var(--surface);
+  color: var(--text);
 }
 
 #editor {
