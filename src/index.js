@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { createInterface } from 'readline';
