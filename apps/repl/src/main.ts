@@ -74,10 +74,47 @@ function renderTabs(): void {
   currentFiles.forEach((file, i) => {
     const tab = document.createElement('button');
     tab.className = 'tab' + (i === activeFileIndex ? ' active' : '');
-    tab.textContent = file.name;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'tab-name';
+    nameSpan.textContent = file.name;
+    tab.appendChild(nameSpan);
+
+    if (currentFiles.length > 1) {
+      const close = document.createElement('span');
+      close.className = 'tab-close';
+      close.innerHTML = '&times;';
+      close.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeFile(i);
+      });
+      tab.appendChild(close);
+    }
+
     tab.addEventListener('click', () => switchTab(i));
+    nameSpan.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      startRename(i, tab, nameSpan);
+    });
+
     tabBar.appendChild(tab);
   });
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'tab-add';
+  addBtn.textContent = '+';
+  addBtn.addEventListener('click', addFile);
+  tabBar.appendChild(addBtn);
+
+  const spacer = document.createElement('div');
+  spacer.className = 'tab-spacer';
+  tabBar.appendChild(spacer);
+
+  const downloadBtn = document.createElement('button');
+  downloadBtn.className = 'tab-download';
+  downloadBtn.textContent = '\u2193 Download';
+  downloadBtn.addEventListener('click', downloadFile);
+  tabBar.appendChild(downloadBtn);
 }
 
 function switchTab(index: number): void {
@@ -86,6 +123,82 @@ function switchTab(index: number): void {
   activeFileIndex = index;
   editor.value = currentFiles[index].content;
   renderTabs();
+}
+
+function addFile(): void {
+  currentFiles[activeFileIndex].content = editor.value;
+  const existingNames = new Set(currentFiles.map(f => f.name));
+  let name = 'untitled.md';
+  let counter = 2;
+  while (existingNames.has(name)) {
+    name = `untitled-${counter}.md`;
+    counter++;
+  }
+  currentFiles.push({ name, path: '/' + name, content: '' });
+  activeFileIndex = currentFiles.length - 1;
+  editor.value = '';
+  renderTabs();
+}
+
+function removeFile(index: number): void {
+  if (currentFiles.length <= 1) return;
+  currentFiles[activeFileIndex].content = editor.value;
+  currentFiles.splice(index, 1);
+  if (index === activeFileIndex) {
+    activeFileIndex = Math.min(index, currentFiles.length - 1);
+  } else if (index < activeFileIndex) {
+    activeFileIndex--;
+  }
+  editor.value = currentFiles[activeFileIndex].content;
+  renderTabs();
+}
+
+function startRename(index: number, tabEl: HTMLElement, nameSpan: HTMLSpanElement): void {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'tab-rename-input';
+  input.value = currentFiles[index].name;
+  nameSpan.replaceWith(input);
+  input.focus();
+  input.select();
+
+  const commit = () => {
+    renameFile(index, input.value);
+  };
+  const cancel = () => {
+    renderTabs();
+  };
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commit(); }
+    if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+  });
+  input.addEventListener('blur', commit);
+}
+
+function renameFile(index: number, rawName: string): void {
+  let name = rawName.trim();
+  if (!name) { renderTabs(); return; }
+  if (!name.endsWith('.md')) name += '.md';
+  const collision = currentFiles.some((f, i) => i !== index && f.name === name);
+  if (collision) { renderTabs(); return; }
+  currentFiles[index].name = name;
+  currentFiles[index].path = '/' + name;
+  renderTabs();
+}
+
+function downloadFile(): void {
+  currentFiles[activeFileIndex].content = editor.value;
+  const file = currentFiles[activeFileIndex];
+  const blob = new Blob([file.content], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 loadProject('hello-world');
@@ -136,12 +249,7 @@ async function run() {
   }
   clearExternalProgramCache();
 
-  // Find entry file content
-  const currentKey = examplesSelect.value;
-  const project = EXAMPLES[currentKey];
-  const entryPath = project ? project.entry : currentFiles[0].path;
-  const entryFile = currentFiles.find(f => f.path === entryPath);
-  const source = entryFile ? entryFile.content : currentFiles[0].content;
+  const source = currentFiles[0].content;
 
   try {
     const program = parse(source);
