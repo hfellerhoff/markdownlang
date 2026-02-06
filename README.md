@@ -10,3 +10,21 @@ Key concepts include:
 - unordered lists → define variables
 - horizontal rules → break statements
 - quotes → wait for input from user on std in and assign response to a variable
+
+Run programs with:
+
+```
+pnpm start filename.md
+```
+
+or prepare your own interpreter executable with
+
+```
+pnpm build && chmod +x ./mdl
+```
+
+and run any markdown program you wish with
+
+```
+./mdl filename.md
+```
