@@ -11,6 +11,17 @@ export class RuntimeTypeError extends Error {
 }
 
 /**
+ * Custom error for undeclared variable access
+ */
+export class UndeclaredVariableError extends Error {
+  constructor(variableName: string, line?: number) {
+    const message = `Variable '${variableName}' is not declared. Use '- ${variableName} = value' to declare it.`;
+    super(line ? `Line ${line}: ${message}` : message);
+    this.name = 'UndeclaredVariableError';
+  }
+}
+
+/**
  * Validate that a value is a number
  */
 export function expectNumber(value: RuntimeValue, context: string, line?: number): number {

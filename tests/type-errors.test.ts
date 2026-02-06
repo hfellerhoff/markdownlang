@@ -2,22 +2,21 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert';
 import { parse } from '../src/parser/index.ts';
 import { interpret } from '../src/interpreter/index.ts';
-import { RuntimeTypeError } from '../src/interpreter/type-guards.ts';
+import { RuntimeTypeError, UndeclaredVariableError } from '../src/interpreter/type-guards.ts';
 
 describe('runtime type errors', () => {
   test('subtraction with string throws RuntimeTypeError with line number', () => {
     const markdown = `# main
 
-x = "hello"
-
-y = x - 5
+- x = "hello"
+- y = x - 5
 `;
     const program = parse(markdown);
     assert.throws(
       () => interpret(program),
       (err: Error) => {
         assert(err instanceof RuntimeTypeError);
-        assert.strictEqual(err.message, 'Line 5: Expected number for left operand of -, got string (hello)');
+        assert.strictEqual(err.message, 'Line 4: Expected number for left operand of -, got string (hello)');
         return true;
       }
     );
@@ -26,16 +25,15 @@ y = x - 5
   test('multiplication with string throws RuntimeTypeError', () => {
     const markdown = `# main
 
-a = 10
-
-b = a * "world"
+- a = 10
+- b = a * "world"
 `;
     const program = parse(markdown);
     assert.throws(
       () => interpret(program),
       (err: Error) => {
         assert(err instanceof RuntimeTypeError);
-        assert.match(err.message, /Line 5:.*Expected number for right operand of \*/);
+        assert.match(err.message, /Line 4:.*Expected number for right operand of \*/);
         return true;
       }
     );
@@ -44,7 +42,7 @@ b = a * "world"
   test('division with boolean throws RuntimeTypeError', () => {
     const markdown = `# main
 
-x = 10 / true
+- x = 10 / true
 `;
     const program = parse(markdown);
     assert.throws(
@@ -60,7 +58,7 @@ x = 10 / true
   test('comparison operators require numbers', () => {
     const markdown = `# main
 
-result = "a" < "b"
+- result = "a" < "b"
 `;
     const program = parse(markdown);
     assert.throws(
@@ -76,16 +74,15 @@ result = "a" < "b"
   test('unary minus requires number', () => {
     const markdown = `# main
 
-x = "hello"
-
-y = -x
+- x = "hello"
+- y = -x
 `;
     const program = parse(markdown);
     assert.throws(
       () => interpret(program),
       (err: Error) => {
         assert(err instanceof RuntimeTypeError);
-        assert.match(err.message, /Line 5:.*Expected number for operand of unary -/);
+        assert.match(err.message, /Line 4:.*Expected number for operand of unary -/);
         return true;
       }
     );
@@ -94,7 +91,7 @@ y = -x
   test('compound subtraction assignment requires numbers', () => {
     const markdown = `# main
 
-x = "hello"
+- x = "hello"
 
 x -= 5
 `;
@@ -112,7 +109,7 @@ x -= 5
   test('compound multiplication assignment requires numbers', () => {
     const markdown = `# main
 
-x = 10
+- x = 10
 
 x *= "bad"
 `;
@@ -130,9 +127,8 @@ x *= "bad"
   test('string concatenation with + does not throw', () => {
     const markdown = `# main
 
-x = "hello"
-
-y = x + " world"
+- x = "hello"
+- y = x + " world"
 
 **{y}**
 `;
@@ -144,7 +140,7 @@ y = x + " world"
   test('string concatenation with += does not throw', () => {
     const markdown = `# main
 
-text = "hello"
+- text = "hello"
 
 text += " world"
 
@@ -158,9 +154,8 @@ text += " world"
   test('number + string coerces to string', () => {
     const markdown = `# main
 
-x = 42
-
-y = x + " is the answer"
+- x = 42
+- y = x + " is the answer"
 
 **{y}**
 `;
@@ -172,7 +167,7 @@ y = x + " is the answer"
   test('error in conditional block includes line number', () => {
     const markdown = `# main
 
-x = "text"
+- x = "text"
 
 ## _x > 5_
 
@@ -209,5 +204,49 @@ x = "text"
         return true;
       }
     );
+  });
+
+  test('undeclared variable assignment throws UndeclaredVariableError', () => {
+    const markdown = `# main
+
+x = 5
+`;
+    const program = parse(markdown);
+    assert.throws(
+      () => interpret(program),
+      (err: Error) => {
+        assert(err instanceof UndeclaredVariableError);
+        assert.match(err.message, /Variable 'x' is not declared/);
+        return true;
+      }
+    );
+  });
+
+  test('variable declaration with list syntax works', () => {
+    const markdown = `# main
+
+- x = 5
+- y = 10
+- sum = x + y
+
+**{sum}**
+`;
+    const program = parse(markdown);
+    const result = interpret(program);
+    assert.deepStrictEqual(result, [15]);
+  });
+
+  test('assignment to declared variable works', () => {
+    const markdown = `# main
+
+- x = 5
+
+x = 10
+
+**{x}**
+`;
+    const program = parse(markdown);
+    const result = interpret(program);
+    assert.deepStrictEqual(result, [10]);
   });
 });

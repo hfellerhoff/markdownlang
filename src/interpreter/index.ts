@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { Runtime } from './runtime.ts';
 import { evaluate } from './evaluator.ts';
-import { expectNumber } from './type-guards.ts';
+import { expectNumber, UndeclaredVariableError } from './type-guards.ts';
 import { parse } from '../parser/index.ts';
 import {
   TAIL_CALL,
@@ -14,6 +14,7 @@ import {
   type FunctionCallStatement,
   type ConditionalBlock,
   type InputStatement,
+  type VariableDeclaration,
   type RuntimeValue,
   type InputReader,
   type PrintHandler,
@@ -129,6 +130,10 @@ function executeStatement(
       executeAssignment(statement, runtime);
       return null;
 
+    case 'VariableDeclaration':
+      executeVariableDeclaration(statement, runtime);
+      return null;
+
     case 'FunctionCallStatement':
       return executeFunctionCall(program, statement, runtime, isLast);
 
@@ -150,13 +155,28 @@ function executeStatement(
 
 function executeInput(statement: InputStatement, runtime: Runtime): void {
   const value = runtime.readInput();
-  runtime.setVariable(statement.variable, value);
+  // Input declares the variable if not already declared
+  if (!runtime.isDeclared(statement.variable)) {
+    runtime.declareVariable(statement.variable, value);
+  } else {
+    runtime.setVariable(statement.variable, value);
+  }
+}
+
+function executeVariableDeclaration(statement: VariableDeclaration, runtime: Runtime): void {
+  const value = evaluate(statement.value, runtime, statement.line);
+  runtime.declareVariable(statement.variable, value);
 }
 
 // Async input execution
 async function executeInputAsync(statement: InputStatement, runtime: Runtime): Promise<void> {
   const value = await runtime.readInputAsync();
-  runtime.setVariable(statement.variable, value);
+  // Input declares the variable if not already declared
+  if (!runtime.isDeclared(statement.variable)) {
+    runtime.declareVariable(statement.variable, value);
+  } else {
+    runtime.setVariable(statement.variable, value);
+  }
 }
 
 function executePrint(statement: PrintStatement, runtime: Runtime): void {
@@ -165,6 +185,11 @@ function executePrint(statement: PrintStatement, runtime: Runtime): void {
 }
 
 function executeAssignment(statement: AssignmentStatement, runtime: Runtime): void {
+  // Check that variable is declared
+  if (!runtime.isDeclared(statement.variable)) {
+    throw new UndeclaredVariableError(statement.variable, statement.line);
+  }
+
   const newValue = evaluate(statement.value, runtime, statement.line);
 
   if (statement.operator) {
@@ -357,6 +382,10 @@ async function executeStatementAsync(
 
     case 'AssignmentStatement':
       executeAssignment(statement, runtime);
+      return null;
+
+    case 'VariableDeclaration':
+      executeVariableDeclaration(statement, runtime);
       return null;
 
     case 'FunctionCallStatement':

@@ -64,9 +64,11 @@ export class Runtime implements RuntimeInterface {
    * Push a new call frame onto the stack
    */
   pushFrame(functionName: string, args: Record<string, RuntimeValue> = {}): void {
+    const declaredVariables = new Set<string>(Object.keys(args));
     this.callStack.push({
       functionName,
-      variables: { ...args }
+      variables: { ...args },
+      declaredVariables
     });
   }
 
@@ -103,6 +105,28 @@ export class Runtime implements RuntimeInterface {
     if (frame) {
       frame.variables[name] = value;
     }
+  }
+
+  /**
+   * Declare and set a variable in current scope
+   */
+  declareVariable(name: string, value: RuntimeValue): void {
+    const frame = this.currentFrame();
+    if (frame) {
+      frame.declaredVariables.add(name);
+      frame.variables[name] = value;
+    }
+  }
+
+  /**
+   * Check if a variable is declared in current scope
+   */
+  isDeclared(name: string): boolean {
+    const frame = this.currentFrame();
+    if (frame) {
+      return frame.declaredVariables.has(name);
+    }
+    return false;
   }
 
   /**

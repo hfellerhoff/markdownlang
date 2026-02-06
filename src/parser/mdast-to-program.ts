@@ -55,11 +55,30 @@ export function mdastToProgram(mdast: Root): Program {
         currentFunction.body.push(conditional);
         currentBlock = conditional.body;
       }
-    } else if (node.type === 'list' && !node.ordered && currentFunction) {
-      // Parameter declarations: - varname
+    } else if (node.type === 'list' && !node.ordered && currentFunction && currentBlock) {
+      // List items can be:
+      // - varname = expr  -> Variable declaration (like 'let')
+      // - varname         -> Parameter declaration (only valid at function level)
       for (const item of node.children) {
-        const paramName = extractText(item as MdastNode);
-        currentFunction.parameters.push(paramName);
+        const itemText = extractText(item as MdastNode);
+        const line = (item as MdastNode).position?.start?.line;
+
+        // Check for variable declaration: varname = expr
+        const declMatch = itemText.match(/^(\w+)\s*=\s*(.+)$/);
+        if (declMatch) {
+          const [, varName, valueStr] = declMatch;
+          currentBlock.push({
+            type: 'VariableDeclaration',
+            variable: varName,
+            value: parseExpression(valueStr),
+            line
+          });
+        } else {
+          // Parameter declaration (only at function body level)
+          if (currentBlock === currentFunction.body) {
+            currentFunction.parameters.push(itemText);
+          }
+        }
       }
     } else if (node.type === 'paragraph' && currentBlock) {
       const statement = parseParagraph(node as MdastNode);

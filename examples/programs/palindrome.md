@@ -9,12 +9,9 @@
 # check
 
 - word
-
-reversed = ""
-
-i = 0
-
-len = word.length
+- reversed = ""
+- i = 0
+- len = word.length
 
 [word, reversed, i, len](#reverse)
 

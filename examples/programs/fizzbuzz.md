@@ -13,6 +13,7 @@
 
 - i
 - end
+- text = ""
 
 ## _i > end_
 

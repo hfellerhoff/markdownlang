@@ -1,8 +1,7 @@
 # double
 
 - n
-
-result = n \* 2
+- result = n \* 2
 
 **{result}**
 

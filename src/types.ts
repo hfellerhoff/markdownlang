@@ -72,13 +72,21 @@ export interface InputStatement {
   line?: number;
 }
 
+export interface VariableDeclaration {
+  type: 'VariableDeclaration';
+  variable: string;
+  value: Expression;
+  line?: number;
+}
+
 export type Statement =
   | PrintStatement
   | AssignmentStatement
   | FunctionCallStatement
   | ConditionalBlock
   | BreakStatement
-  | InputStatement;
+  | InputStatement
+  | VariableDeclaration;
 
 // Function declaration
 export interface FunctionDeclaration {
@@ -99,6 +107,7 @@ export interface Program {
 export interface CallFrame {
   functionName: string;
   variables: Record<string, RuntimeValue>;
+  declaredVariables: Set<string>;
 }
 
 // Input reader function type
@@ -143,6 +152,8 @@ export interface RuntimeInterface {
   currentFrame(): CallFrame | undefined;
   getVariable(name: string): RuntimeValue;
   setVariable(name: string, value: RuntimeValue): void;
+  declareVariable(name: string, value: RuntimeValue): void;
+  isDeclared(name: string): boolean;
   print(value: RuntimeValue): void;
   getOutput(): RuntimeValue[];
   setBreak(): void;
