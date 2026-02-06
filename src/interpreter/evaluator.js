@@ -18,6 +18,9 @@ export function evaluate(node, runtime) {
     case 'TemplateLiteral':
       return evaluateTemplateLiteral(node, runtime);
 
+    case 'MemberExpression':
+      return evaluateMemberExpression(node, runtime);
+
     case 'CallExpression':
       // Handle built-in functions if needed
       throw new Error(`Call expressions not supported: ${node.callee?.name}`);
@@ -98,4 +101,17 @@ function evaluateTemplateLiteral(node, runtime) {
     }
   }
   return result;
+}
+
+function evaluateMemberExpression(node, runtime) {
+  const object = evaluate(node.object, runtime);
+
+  if (node.computed) {
+    // word[i] - computed property access
+    const property = evaluate(node.property, runtime);
+    return object[property];
+  } else {
+    // word.length - dot notation
+    return object[node.property.name];
+  }
 }

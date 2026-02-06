@@ -6,6 +6,51 @@ export class Runtime {
     this.callStack = [];
     this.output = [];
     this.breakFlag = false;
+    this.inputBuffer = [];
+    this.inputIndex = 0;
+    this.printHandler = null; // For immediate output
+  }
+
+  /**
+   * Set a handler for immediate print output
+   */
+  setPrintHandler(handler) {
+    this.printHandler = handler;
+  }
+
+  /**
+   * Set input buffer for reading (sync mode)
+   */
+  setInput(inputs) {
+    this.inputBuffer = Array.isArray(inputs) ? inputs : [];
+    this.inputIndex = 0;
+  }
+
+  /**
+   * Set async input reader function
+   */
+  setInputReader(reader) {
+    this.inputReader = reader;
+  }
+
+  /**
+   * Read next input from buffer (sync mode)
+   */
+  readInput() {
+    if (this.inputIndex < this.inputBuffer.length) {
+      return this.inputBuffer[this.inputIndex++];
+    }
+    return null;
+  }
+
+  /**
+   * Read input asynchronously
+   */
+  async readInputAsync() {
+    if (this.inputReader) {
+      return await this.inputReader();
+    }
+    return this.readInput();
   }
 
   /**
@@ -58,6 +103,10 @@ export class Runtime {
    */
   print(value) {
     this.output.push(value);
+    // If there's a print handler, call it immediately
+    if (this.printHandler) {
+      this.printHandler(value);
+    }
   }
 
   /**

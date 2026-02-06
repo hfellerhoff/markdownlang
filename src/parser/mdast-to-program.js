@@ -53,7 +53,17 @@ export function mdastToProgram(mdast) {
         currentBlock.push({ type: 'BreakStatement' });
       }
       currentBlock = currentFunction.body;
+    } else if (node.type === 'blockquote' && currentBlock) {
+      // Input statement: > variableName
+      const varName = extractText(node).trim();
+      if (varName) {
+        currentBlock.push({
+          type: 'InputStatement',
+          variable: varName
+        });
+      }
     }
+    // Note: 'code' blocks are ignored (treated as comments)
   }
 
   return program;
@@ -64,6 +74,9 @@ export function mdastToProgram(mdast) {
  */
 function extractText(node) {
   let text = '';
+  if (node.type === 'inlineCode') {
+    return ''; // Skip inline code - treat as comment
+  }
   if (node.value) {
     text += node.value;
   }
