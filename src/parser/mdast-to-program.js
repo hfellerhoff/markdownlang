@@ -93,10 +93,10 @@ function extractEmphasisText(node) {
 function parseParagraph(node) {
   const children = node.children || [];
 
-  // Check for print statement: **{expr}**
+  // Check for print statement: **{expr}** or **text**
   if (children.length === 1 && children[0].type === 'strong') {
     const strongText = extractText(children[0]);
-    // Extract expression from {expr}
+    // Check if expression is wrapped in {expr}
     const match = strongText.match(/^\{(.+)\}$/);
     if (match) {
       return {
@@ -104,6 +104,11 @@ function parseParagraph(node) {
         expression: parseExpression(match[1])
       };
     }
+    // Otherwise treat as literal string
+    return {
+      type: 'PrintStatement',
+      expression: { type: 'Literal', value: strongText }
+    };
   }
 
   // Check for function call: [args](#func)
