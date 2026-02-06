@@ -15,6 +15,9 @@ export function evaluate(node, runtime) {
     case 'UnaryExpression':
       return evaluateUnaryExpression(node, runtime);
 
+    case 'TemplateLiteral':
+      return evaluateTemplateLiteral(node, runtime);
+
     case 'CallExpression':
       // Handle built-in functions if needed
       throw new Error(`Call expressions not supported: ${node.callee?.name}`);
@@ -83,4 +86,16 @@ function evaluateUnaryExpression(node, runtime) {
     default:
       throw new Error(`Unknown unary operator: ${node.operator}`);
   }
+}
+
+function evaluateTemplateLiteral(node, runtime) {
+  let result = '';
+  for (const part of node.parts) {
+    if (part.type === 'literal') {
+      result += part.value;
+    } else if (part.type === 'expression') {
+      result += evaluate(part.expr, runtime);
+    }
+  }
+  return result;
 }

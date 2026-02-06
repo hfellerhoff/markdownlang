@@ -88,12 +88,53 @@ function extractEmphasisText(node) {
 }
 
 /**
+ * Parse a template literal string into parts (literals and expressions)
+ * e.g. "Hello, {name}!" -> [{ type: 'literal', value: 'Hello, ' }, { type: 'expression', expr: ... }, { type: 'literal', value: '!' }]
+ */
+function parseTemplateLiteral(text) {
+  const parts = [];
+  let current = '';
+  let i = 0;
+
+  while (i < text.length) {
+    if (text[i] === '{') {
+      // Save any accumulated literal text
+      if (current) {
+        parts.push({ type: 'literal', value: current });
+        current = '';
+      }
+      // Find matching closing brace
+      let braceCount = 1;
+      let j = i + 1;
+      while (j < text.length && braceCount > 0) {
+        if (text[j] === '{') braceCount++;
+        if (text[j] === '}') braceCount--;
+        j++;
+      }
+      const exprText = text.slice(i + 1, j - 1);
+      parts.push({ type: 'expression', expr: parseExpression(exprText) });
+      i = j;
+    } else {
+      current += text[i];
+      i++;
+    }
+  }
+
+  // Save any remaining literal text
+  if (current) {
+    parts.push({ type: 'literal', value: current });
+  }
+
+  return parts;
+}
+
+/**
  * Parse a paragraph into a statement
  */
 function parseParagraph(node) {
   const children = node.children || [];
 
-  // Check for print statement: **{expr}** or **text**
+  // Check for print statement: **{expr}**, **text**, or **template {expr} string**
   if (children.length === 1 && children[0].type === 'strong') {
     const strongText = extractText(children[0]);
     // Check if expression is wrapped in {expr}
@@ -104,6 +145,14 @@ function parseParagraph(node) {
         expression: parseExpression(match[1])
       };
     }
+    // Check for template string with embedded expressions
+    if (strongText.includes('{') && strongText.includes('}')) {
+      const parts = parseTemplateLiteral(strongText);
+      return {
+        type: 'PrintStatement',
+        expression: { type: 'TemplateLiteral', parts }
+      };
+    }
     // Otherwise treat as literal string
     return {
       type: 'PrintStatement',
@@ -111,15 +160,32 @@ function parseParagraph(node) {
     };
   }
 
-  // Check for function call: [args](#func)
+  // Check for function call: [args](#func) or [args](file.md#func)
   if (children.length === 1 && children[0].type === 'link') {
     const link = children[0];
-    const funcName = link.url.replace(/^#/, '');
     const argsText = extractText(link);
     const args = argsText ? argsText.split(',').map(a => parseExpression(a.trim())) : [];
+
+    let functionName;
+    let externalFile = null;
+
+    if (link.url.startsWith('#')) {
+      // Internal call: #function-name
+      functionName = link.url.slice(1);
+    } else if (link.url.includes('#')) {
+      // External call: filename.md#function-name
+      const hashIndex = link.url.indexOf('#');
+      externalFile = link.url.slice(0, hashIndex);
+      functionName = link.url.slice(hashIndex + 1);
+    } else {
+      // No hash - treat as internal call (backwards compatibility)
+      functionName = link.url;
+    }
+
     return {
       type: 'FunctionCallStatement',
-      functionName: funcName,
+      functionName: functionName,
+      externalFile: externalFile,
       arguments: args
     };
   }

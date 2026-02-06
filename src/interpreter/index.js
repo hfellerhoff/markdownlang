@@ -1,11 +1,36 @@
+import { readFileSync } from 'fs';
+import { dirname, resolve } from 'path';
 import { Runtime } from './runtime.js';
 import { evaluate } from './evaluator.js';
+import { parse } from '../parser/index.js';
+
+// Cache for external programs to avoid re-parsing
+const externalProgramCache = new Map();
+
+/**
+ * Load and parse an external markdown file
+ */
+function loadExternalProgram(filePath, baseDir) {
+  const fullPath = resolve(baseDir, filePath);
+
+  if (externalProgramCache.has(fullPath)) {
+    return { program: externalProgramCache.get(fullPath), fullPath };
+  }
+
+  const markdown = readFileSync(fullPath, 'utf-8');
+  const program = parse(markdown);
+  program._baseDir = dirname(fullPath);
+  externalProgramCache.set(fullPath, program);
+
+  return { program, fullPath };
+}
 
 /**
  * Interpret a Program AST
  */
-export function interpret(program, entryPoint = 'main', args = []) {
+export function interpret(program, entryPoint = 'main', args = [], baseDir = process.cwd()) {
   const runtime = new Runtime();
+  program._baseDir = baseDir;
 
   // Find the entry function
   const mainFunc = program.functions[entryPoint];
@@ -116,16 +141,30 @@ function getDefaultValue(value) {
 }
 
 function executeFunctionCall(program, statement, runtime) {
-  const func = program.functions[statement.functionName];
-  if (!func) {
-    throw new Error(`Function '${statement.functionName}' not found`);
+  let targetProgram = program;
+  let func;
+
+  if (statement.externalFile) {
+    // Load external file
+    const baseDir = program._baseDir || process.cwd();
+    const { program: externalProgram } = loadExternalProgram(statement.externalFile, baseDir);
+    targetProgram = externalProgram;
+    func = externalProgram.functions[statement.functionName];
+    if (!func) {
+      throw new Error(`Function '${statement.functionName}' not found in '${statement.externalFile}'`);
+    }
+  } else {
+    func = program.functions[statement.functionName];
+    if (!func) {
+      throw new Error(`Function '${statement.functionName}' not found`);
+    }
   }
 
   // Evaluate arguments
   const args = statement.arguments.map(arg => evaluate(arg, runtime));
 
   // Execute function
-  executeFunction(program, func, args, runtime);
+  executeFunction(targetProgram, func, args, runtime);
 }
 
 function executeConditional(program, statement, runtime) {
