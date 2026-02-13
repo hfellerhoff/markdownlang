@@ -1,6 +1,7 @@
 # double
 
 1. n
+
 - result = n \* 2
 
 **{result}**
