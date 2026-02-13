@@ -282,7 +282,6 @@ main {
 .tab-download:hover { color: var(--text); }
 
 #editor-container {
-  display: flex;
   flex: 1;
   overflow: hidden;
   position: relative;
@@ -297,12 +296,6 @@ main {
   padding-top: 1rem;
   pointer-events: none;
   z-index: 0;
-}
-
-#editor-wrapper {
-  flex: 1;
-  position: relative;
-  z-index: 1;
 }
 
 .scope-bg-line {
@@ -325,30 +318,11 @@ main {
 .scope-bg-band.level-5 { background: rgba(196, 131, 110, 0.12); }
 .scope-bg-band.level-6 { background: rgba(138, 158, 110, 0.12); }
 
-#gutter {
-  overflow: hidden;
-  padding-top: 1rem;
-  background: transparent;
-  width: 28px;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 1;
-}
-
-.gutter-line {
-  line-height: 1.6;
-  font-size: 0.9rem;
-  height: calc(0.9rem * 1.6);
-  display: flex;
-  align-items: stretch;
-  justify-content: flex-start;
-  padding-left: 4px;
-}
-
 .scope-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
   width: 2px;
-  display: inline-block;
-  margin-right: 2px;
 }
 
 .scope-bar.level-1 { background: var(--scope-1); }
@@ -366,7 +340,7 @@ main {
   resize: none;
   border: none;
   outline: none;
-  padding: 1rem;
+  padding: 1rem 1rem 1rem 32px;
   font-family: var(--font-mono);
   font-size: 0.9rem;
   line-height: 1.6;

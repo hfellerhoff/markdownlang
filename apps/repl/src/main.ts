@@ -70,7 +70,6 @@ const examplesSelect = document.getElementById('examples') as HTMLSelectElement;
 const tabBar = document.getElementById('tab-bar') as HTMLDivElement;
 const viewToggle = document.getElementById('view-toggle') as HTMLDivElement;
 const fontSelect = document.getElementById('font-select') as HTMLSelectElement;
-const gutter = document.getElementById('gutter') as HTMLDivElement;
 const scopeBg = document.getElementById('scope-bg') as HTMLDivElement;
 const editorContainer = document.getElementById('editor-container') as HTMLDivElement;
 
@@ -167,37 +166,31 @@ function computeScopes(text: string): number[] {
   return depths;
 }
 
-const GUTTER_PAD = 4;  // matches .gutter-line padding-left
-const BAR_STEP = 4;    // matches scope-bar width + margin
+const BAR_PAD = 6;   // left offset for first bar
+const BAR_STEP = 5;  // spacing per level (bar width + gap)
 
 function renderGutter(): void {
   const depths = computeScopes(editor.value);
-  let gutterHtml = '';
-  let bgHtml = '';
+  let html = '';
   for (const d of depths) {
-    gutterHtml += '<div class="gutter-line">';
+    html += '<div class="scope-bg-line">';
     for (let level = 1; level <= d; level++) {
-      gutterHtml += `<span class="scope-bar level-${level}"></span>`;
-    }
-    gutterHtml += '</div>';
-
-    bgHtml += '<div class="scope-bg-line">';
-    for (let level = 1; level <= d; level++) {
-      const left = GUTTER_PAD + (level - 1) * BAR_STEP;
+      const left = BAR_PAD + (level - 1) * BAR_STEP;
+      // scope bar
+      html += `<span class="scope-bar level-${level}" style="left:${left}px"></span>`;
+      // background band
       if (level === d) {
-        bgHtml += `<span class="scope-bg-band level-${level}" style="left:${left}px;right:0"></span>`;
+        html += `<span class="scope-bg-band level-${level}" style="left:${left}px;right:0"></span>`;
       } else {
-        bgHtml += `<span class="scope-bg-band level-${level}" style="left:${left}px;width:${BAR_STEP}px"></span>`;
+        html += `<span class="scope-bg-band level-${level}" style="left:${left}px;width:${BAR_STEP}px"></span>`;
       }
     }
-    bgHtml += '</div>';
+    html += '</div>';
   }
-  gutter.innerHTML = gutterHtml;
-  scopeBg.innerHTML = bgHtml;
+  scopeBg.innerHTML = html;
 }
 
 editor.addEventListener('scroll', () => {
-  gutter.scrollTop = editor.scrollTop;
   scopeBg.style.top = -editor.scrollTop + 'px';
 });
 
