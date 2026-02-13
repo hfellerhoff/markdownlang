@@ -36,6 +36,9 @@ importers:
       '@markdownlang/examples':
         specifier: workspace:*
         version: link:../../packages/examples
+      marked:
+        specifier: ^17.0.2
+        version: 17.0.2
     devDependencies:
       '@types/node':
         specifier: ^25.2.1
@@ -591,6 +594,11 @@ packages:
     resolution: {integrity: sha512-B7qPcEVE3NVkmSJbaYxvv4cHkVW7DQsZz13pUMrfS8z8Q/BuShN+gcTXrUlPiGqM2/t/EEaI030bpxMqY8gMlw==}
     engines: {node: '>= 10.16.0'}
 
+  marked@17.0.2:
+    resolution: {integrity: sha512-s5HZGFQea7Huv5zZcAGhJLT3qLpAfnY7v7GWkICUr0+Wd5TFEtdlRR2XUL5Gg+RH7u2Df595ifrxR03mBaw7gA==}
+    engines: {node: '>= 20'}
+    hasBin: true
+
   mdast-util-from-markdown@2.0.2:
     resolution: {integrity: sha512-uZhTV/8NBuw0WHkPTrCqDOl0zVe1BIng5ZtHoDk49ME1qqcjYmmLmOf0gELgcRMxN4w2iuIeVso5/6QymSrgmA==}
 
@@ -1131,6 +1139,8 @@ snapshots:
   is-plain-obj@4.1.0: {}
 
   jsep@1.4.0: {}
+
+  marked@17.0.2: {}
 
   mdast-util-from-markdown@2.0.2:
     dependencies:

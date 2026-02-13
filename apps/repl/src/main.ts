@@ -2,6 +2,7 @@ import { parse } from '@markdownlang/core/parser';
 import { interpretAsync, clearExternalProgramCache } from '@markdownlang/core/interpreter';
 import type { RuntimeValue } from '@markdownlang/core/types';
 import { registerFile, clearFiles } from './node-stubs.ts';
+import { marked } from 'marked';
 
 import fizzbuzz from '@markdownlang/examples/fizzbuzz.md?raw';
 import helloWorld from '@markdownlang/examples/hello-world.md?raw';
@@ -57,13 +58,61 @@ const EXAMPLES: Record<string, Project> = {
 };
 
 const editor = document.getElementById('editor') as HTMLTextAreaElement;
+const preview = document.getElementById('preview') as HTMLDivElement;
 const output = document.getElementById('output') as HTMLDivElement;
 const runBtn = document.getElementById('run') as HTMLButtonElement;
 const examplesSelect = document.getElementById('examples') as HTMLSelectElement;
 const tabBar = document.getElementById('tab-bar') as HTMLDivElement;
+const viewToggle = document.getElementById('view-toggle') as HTMLDivElement;
+const fontSelect = document.getElementById('font-select') as HTMLSelectElement;
+
+const FONT_MAP: Record<string, string> = {
+  serif: 'var(--font-serif)',
+  sans: 'var(--font-sans)',
+  mono: 'var(--font-mono)',
+  hand: 'var(--font-hand)',
+  barcode: "'Libre Barcode 39 Extended', system-ui",
+  lines: "'Linefont', sans-serif",
+  waves: "'Wavefont', sans-serif",
+};
 
 let currentFiles: { name: string; path: string; content: string }[] = [];
 let activeFileIndex = 0;
+let previewMode = false;
+
+function toggleMode(mode: 'edit' | 'preview'): void {
+  previewMode = mode === 'preview';
+  const buttons = viewToggle.querySelectorAll('.view-toggle-btn');
+  buttons.forEach(btn => {
+    btn.classList.toggle('active', (btn as HTMLElement).dataset.mode === mode);
+  });
+
+  if (previewMode) {
+    currentFiles[activeFileIndex].content = editor.value;
+    preview.innerHTML = marked(editor.value) as string;
+    preview.style.fontFamily = FONT_MAP[fontSelect.value] || FONT_MAP.serif;
+    editor.style.display = 'none';
+    preview.style.display = '';
+    fontSelect.classList.add('visible');
+  } else {
+    editor.style.display = '';
+    preview.style.display = 'none';
+    fontSelect.classList.remove('visible');
+  }
+}
+
+viewToggle.addEventListener('click', (e) => {
+  const btn = (e.target as HTMLElement).closest('.view-toggle-btn') as HTMLElement | null;
+  if (!btn) return;
+  const mode = btn.dataset.mode as 'edit' | 'preview';
+  if ((mode === 'preview') !== previewMode) {
+    toggleMode(mode);
+  }
+});
+
+fontSelect.addEventListener('change', () => {
+  preview.style.fontFamily = FONT_MAP[fontSelect.value] || FONT_MAP.serif;
+});
 
 function loadProject(key: string): void {
   const project = EXAMPLES[key];
@@ -71,6 +120,7 @@ function loadProject(key: string): void {
   currentFiles = project.files.map(f => ({ ...f }));
   activeFileIndex = 0;
   editor.value = currentFiles[0].content;
+  toggleMode('preview');
   renderTabs();
 }
 
@@ -127,6 +177,7 @@ function switchTab(index: number): void {
   currentFiles[activeFileIndex].content = editor.value;
   activeFileIndex = index;
   editor.value = currentFiles[index].content;
+  if (previewMode) toggleMode('edit');
   renderTabs();
 }
 

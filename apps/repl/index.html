@@ -4,6 +4,9 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>markdownlang REPL</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Libre+Barcode+39+Extended&family=Linefont&family=Wavefont&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="/src/style.css" />
         <script>
             window.process = { cwd: () => "/" };
@@ -38,6 +41,19 @@
             <section class="pane">
                 <div class="pane-header">
                     <label for="editor">Source</label>
+                    <div class="view-toggle" id="view-toggle">
+                        <button class="view-toggle-btn" data-mode="edit">Edit</button>
+                        <button class="view-toggle-btn active" data-mode="preview">Preview</button>
+                    </div>
+                    <select id="font-select">
+                        <option value="serif" selected>Serif</option>
+                        <option value="sans">Sans Serif</option>
+                        <option value="mono">Monospace</option>
+                        <option value="hand">Handwritten</option>
+                        <option value="barcode">Barcode</option>
+                        <option value="lines">Lines</option>
+                        <option value="waves">Waves</option>
+                    </select>
                     <select id="examples">
                         <option value="hello-world" selected>
                             Hello World
@@ -63,6 +79,7 @@
                     spellcheck="false"
                     autocomplete="off"
                 ></textarea>
+                <div id="preview" style="display:none"></div>
             </section>
             <section class="pane">
                 <label>Output</label>
