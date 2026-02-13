@@ -28,6 +28,10 @@ export function clearExternalProgramCache(): void {
   externalProgramCache.clear();
 }
 
+function isUrl(path: string): boolean {
+  return path.startsWith('http://') || path.startsWith('https://');
+}
+
 /**
  * Load and parse an external markdown file
  */
@@ -44,6 +48,36 @@ function loadExternalProgram(filePath: string, baseDir: string): { program: Prog
   externalProgramCache.set(fullPath, program);
 
   return { program, fullPath };
+}
+
+/**
+ * Load and parse an external markdown file, supporting remote URLs
+ */
+async function loadExternalProgramAsync(filePath: string, baseDir: string): Promise<{ program: Program; fullPath: string }> {
+  if (isUrl(filePath) || isUrl(baseDir)) {
+    const fullUrl = isUrl(filePath) ? filePath : new URL(filePath, baseDir).href;
+    const urlPath = new URL(fullUrl).pathname;
+    if (!urlPath.endsWith('.md')) {
+      throw new Error(`Remote imports must reference .md files, got '${fullUrl}'`);
+    }
+
+    if (externalProgramCache.has(fullUrl)) {
+      return { program: externalProgramCache.get(fullUrl)!, fullPath: fullUrl };
+    }
+
+    const response = await fetch(fullUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch remote file '${fullUrl}': ${response.status} ${response.statusText}`);
+    }
+    const markdown = await response.text();
+    const program = parse(markdown);
+    program._baseDir = new URL('.', fullUrl).href;
+    externalProgramCache.set(fullUrl, program);
+
+    return { program, fullPath: fullUrl };
+  }
+
+  return loadExternalProgram(filePath, baseDir);
 }
 
 /**
@@ -250,8 +284,11 @@ function executeFunctionCall(
   let func: FunctionDeclaration;
 
   if (statement.externalFile) {
-    // Load external file
     const baseDir = program._baseDir || process.cwd();
+    if (isUrl(statement.externalFile) || isUrl(baseDir)) {
+      throw new Error(`Remote URL imports require interpretAsync(). Use interpretAsync() to call functions from '${statement.externalFile}'.`);
+    }
+    // Load external file
     const { program: externalProgram } = loadExternalProgram(statement.externalFile, baseDir);
     targetProgram = externalProgram;
     func = externalProgram.functions[statement.functionName];
@@ -423,9 +460,9 @@ async function executeFunctionCallAsync(
   let func: FunctionDeclaration;
 
   if (statement.externalFile) {
-    // Load external file
+    // Load external file (supports remote URLs)
     const baseDir = program._baseDir || process.cwd();
-    const { program: externalProgram } = loadExternalProgram(statement.externalFile, baseDir);
+    const { program: externalProgram } = await loadExternalProgramAsync(statement.externalFile, baseDir);
     targetProgram = externalProgram;
     func = externalProgram.functions[statement.functionName];
     if (!func) {
