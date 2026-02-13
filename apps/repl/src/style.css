@@ -285,14 +285,54 @@ main {
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative;
+  background: #fff;
 }
+
+#scope-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding-top: 1rem;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#editor-wrapper {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.scope-bg-line {
+  position: relative;
+  line-height: 1.6;
+  font-size: 0.9rem;
+  height: calc(0.9rem * 1.6);
+}
+
+.scope-bg-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.scope-bg-band.level-1 { background: rgba(139, 115, 85, 0.12); }
+.scope-bg-band.level-2 { background: rgba(107, 142, 107, 0.12); }
+.scope-bg-band.level-3 { background: rgba(123, 141, 170, 0.12); }
+.scope-bg-band.level-4 { background: rgba(160, 125, 160, 0.12); }
+.scope-bg-band.level-5 { background: rgba(196, 131, 110, 0.12); }
+.scope-bg-band.level-6 { background: rgba(138, 158, 110, 0.12); }
 
 #gutter {
   overflow: hidden;
   padding-top: 1rem;
-  background: var(--surface);
+  background: transparent;
   width: 28px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .gutter-line {
@@ -319,16 +359,18 @@ main {
 .scope-bar.level-6 { background: var(--scope-6); }
 
 #editor {
-  flex: 1;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   resize: none;
   border: none;
   outline: none;
   padding: 1rem;
-  padding-left: 0.5rem;
   font-family: var(--font-mono);
   font-size: 0.9rem;
   line-height: 1.6;
-  background: var(--surface);
+  background: transparent;
   color: var(--text);
   tab-size: 2;
 }

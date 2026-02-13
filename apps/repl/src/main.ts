@@ -71,6 +71,7 @@ const tabBar = document.getElementById('tab-bar') as HTMLDivElement;
 const viewToggle = document.getElementById('view-toggle') as HTMLDivElement;
 const fontSelect = document.getElementById('font-select') as HTMLSelectElement;
 const gutter = document.getElementById('gutter') as HTMLDivElement;
+const scopeBg = document.getElementById('scope-bg') as HTMLDivElement;
 const editorContainer = document.getElementById('editor-container') as HTMLDivElement;
 
 const FONT_MAP: Record<string, string> = {
@@ -134,13 +135,26 @@ function computeScopes(text: string): number[] {
   const lines = text.split('\n');
   const depths: number[] = [];
   let depth = 0;
+  let isFirstFunction = true;
 
-  for (const line of lines) {
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx];
     const headingMatch = line.match(/^(#{1,6})\s/);
     if (headingMatch) {
       const count = headingMatch[1].length;
       if (count === 1) {
+        if (!isFirstFunction) {
+          // Walk back and set preceding blank lines to 0 (gap between functions)
+          for (let i = depths.length - 1; i >= 0; i--) {
+            if (lines[i].trim() === '') {
+              depths[i] = 0;
+            } else {
+              break;
+            }
+          }
+        }
         depth = 1;
+        isFirstFunction = false;
       } else if (depth >= count - 1) {
         depth = count;
       }
@@ -153,21 +167,38 @@ function computeScopes(text: string): number[] {
   return depths;
 }
 
+const GUTTER_PAD = 4;  // matches .gutter-line padding-left
+const BAR_STEP = 4;    // matches scope-bar width + margin
+
 function renderGutter(): void {
   const depths = computeScopes(editor.value);
-  let html = '';
+  let gutterHtml = '';
+  let bgHtml = '';
   for (const d of depths) {
-    html += '<div class="gutter-line">';
+    gutterHtml += '<div class="gutter-line">';
     for (let level = 1; level <= d; level++) {
-      html += `<span class="scope-bar level-${level}"></span>`;
+      gutterHtml += `<span class="scope-bar level-${level}"></span>`;
     }
-    html += '</div>';
+    gutterHtml += '</div>';
+
+    bgHtml += '<div class="scope-bg-line">';
+    for (let level = 1; level <= d; level++) {
+      const left = GUTTER_PAD + (level - 1) * BAR_STEP;
+      if (level === d) {
+        bgHtml += `<span class="scope-bg-band level-${level}" style="left:${left}px;right:0"></span>`;
+      } else {
+        bgHtml += `<span class="scope-bg-band level-${level}" style="left:${left}px;width:${BAR_STEP}px"></span>`;
+      }
+    }
+    bgHtml += '</div>';
   }
-  gutter.innerHTML = html;
+  gutter.innerHTML = gutterHtml;
+  scopeBg.innerHTML = bgHtml;
 }
 
 editor.addEventListener('scroll', () => {
   gutter.scrollTop = editor.scrollTop;
+  scopeBg.style.top = -editor.scrollTop + 'px';
 });
 
 editor.addEventListener('input', renderGutter);
