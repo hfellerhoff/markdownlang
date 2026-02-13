@@ -93,11 +93,9 @@ function toggleMode(mode: 'edit' | 'preview'): void {
     preview.style.fontFamily = FONT_MAP[fontSelect.value] || FONT_MAP.serif;
     editor.style.display = 'none';
     preview.style.display = '';
-    fontSelect.classList.add('visible');
   } else {
     editor.style.display = '';
     preview.style.display = 'none';
-    fontSelect.classList.remove('visible');
   }
 }
 
@@ -110,8 +108,18 @@ viewToggle.addEventListener('click', (e) => {
   }
 });
 
+const title = document.querySelector('header h1') as HTMLElement;
+
+function applyFont(value: string): void {
+  const font = FONT_MAP[value] || FONT_MAP.serif;
+  title.style.fontFamily = font;
+  if (previewMode) {
+    preview.style.fontFamily = font;
+  }
+}
+
 fontSelect.addEventListener('change', () => {
-  preview.style.fontFamily = FONT_MAP[fontSelect.value] || FONT_MAP.serif;
+  applyFont(fontSelect.value);
 });
 
 function loadProject(key: string): void {

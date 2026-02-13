@@ -107,16 +107,11 @@ main {
   padding: 0.2rem 0.4rem;
   outline: none;
   cursor: pointer;
-  display: none;
 }
 
 #font-select:hover {
   color: var(--text);
   border-color: var(--muted);
-}
-
-#font-select.visible {
-  display: block;
 }
 
 .pane-header #examples {
